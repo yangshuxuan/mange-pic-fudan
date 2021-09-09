@@ -15,8 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls.static import static
+from . import settings
 admin.site.site_header = "复旦大学医学院病理系病理工作站"
 admin.site.site_title = "病理信息管理"
 urlpatterns = [
     path('admin/', admin.site.urls),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
