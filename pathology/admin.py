@@ -1,18 +1,28 @@
 from django.contrib import admin
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from django.utils.html import format_html,urlencode
 from django.urls import reverse
 import os
 from . import models
-# Register your models here.
-@admin.register(models.Doctor)
-class DoctorAdmin(admin.ModelAdmin):
-    
-    list_display = ['id','iddentificationID','name','created_at']
-    # list_editable = ['iddentificationID','name']
-    ordering = ['created_at','name']
-    search_fields = ['name__istartswith','iddentificationID__istartswith']
-    list_per_page = 10
-    
+
+# Define an inline admin descriptor for Employee model
+# which acts a bit like a singleton
+class DoctorInline(admin.StackedInline):
+    model = models.Doctor
+    can_delete = False
+    verbose_name_plural = '医生集'
+
+# Define a new User admin
+class UserAdmin(BaseUserAdmin):
+    inlines = (DoctorInline,)
+    # search_fields = ['iddentificationID','username','first_name','last_name']
+
+# Re-register UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
+
 
 class PathologyPictureInline(admin.StackedInline):
     model = models.PathologyPictureItem
@@ -20,27 +30,36 @@ class PathologyPictureInline(admin.StackedInline):
 @admin.register(models.Patient)
 class PatientAdmin(admin.ModelAdmin):
     # 'doctors',
-    list_display = ['name','sex','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList']
+    list_display = ['name','sex','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','creator']
     inlines = [PathologyPictureInline]
     ordering = ['operateSeqNumber','operateDate','deathDate','name','iddentificationID']
     search_fields = ['name','iddentificationID__istartswith','operateSeqNumber','operateDiagose','deadReason']
-    readonly_fields =  ['name','iddentificationID','operateSeqNumber','operateDiagose','deadReason']
+    # readonly_fields =  ['name','iddentificationID','operateSeqNumber','operateDiagose','deadReason']
+    exclude = ('creator',)
     list_per_page = 10
-    autocomplete_fields = ['doctors']
+    # autocomplete_fields = ['doctors']
+    # raw_id_fields = ['doctors']
 
     @admin.display(description="剖验医生")
     def doctorNames(self,patient):
-        return ",".join([ d.name for d in list(patient.doctors.all())])
+        return ",".join([ d.username for d in list(patient.doctors.all())])
     @admin.display(description="解剖记录")
     def showOperateRecord(self,patient):
         if patient.operateRecord:
-            return format_html('<a href="{}">{}</a>',patient.operateRecord.url,os.path.basename(patient.operateRecord.name))
+            url = (patient.operateRecord.url 
+            + "?" 
+            + urlencode({'patient__id':str(patient.id)}))
+            return format_html('<a href="{}">{}</a>',url,os.path.basename(patient.operateRecord.name))
         else:
             return None
+    # showOperateRecord.allow_tags = True
     @admin.display(description="纠纷PPT")
     def showPptRecord(self,patient):
         if patient.pptRecord:
-            return format_html('<a href="{}">{}</a>',patient.pptRecord.url,os.path.basename(patient.pptRecord.name))
+            url = (patient.pptRecord.url 
+            + "?" 
+            + urlencode({'patient__id':str(patient.id)}))
+            return format_html('<a href="{}">{}</a>',url,os.path.basename(patient.pptRecord.name))
         else:
             return None
     
@@ -51,6 +70,25 @@ class PatientAdmin(admin.ModelAdmin):
             + "?" 
             + urlencode({'patient__id':str(patient.id)}))
             return format_html('<a href="{}"><img src="/media/icons/finger.svg" width="25" height="20" alt="浏览"></a>',url)
+    
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "doctors":
+            kwargs["queryset"] = User.objects.filter(groups__name='普通医生')
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+    
+    def save_model(self, request, obj, form, change):
+        obj.creator = request.user
+        super().save_model(request, obj, form, change)
+    
+    def has_change_permission(self,request, obj=None):
+        if obj is None:
+            return True
+        return obj.doctors.filter(id = request.user.id).exists()
+    def has_delete_permission(self,request, obj=None):
+        if obj is None:
+            return True
+        return obj.creator.id == request.user.id
+        
 
 
 @admin.register(models.PathologyPictureItem)

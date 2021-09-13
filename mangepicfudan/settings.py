@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'mangepicfudan.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'pathologyinfo',
+        'NAME': 'operatepathology',
         # 'NAME': 'storefront',
         'HOST':'139.198.180.97',
         'USER':'root',
@@ -131,3 +131,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_ROOT = BASE_DIR / 'media/'
 MEDIA_URL = '/media/'
+
+
+
+ppt= 'ppt'
+records = 'records'
+images = 'images'
+
+PPT_ROOT = MEDIA_ROOT / ppt
+RECORDS_ROOT = MEDIA_ROOT / records
+IMAGES_ROOT = MEDIA_ROOT / images
+
+PPT_URL =  f"{MEDIA_URL}{ppt}/"
+RECORDS_URL =  f"{MEDIA_URL}{records}/"
+IMAGES_URL = f"{MEDIA_URL}{images}/"
