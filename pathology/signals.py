@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save,pre_save
+from django.db.models.signals import post_save,post_delete
 from django.dispatch import receiver
 from .models import Patient
 @receiver(post_save,sender=Patient)
@@ -6,9 +6,6 @@ def renameFileAfterCreated(sender,instance,created,raw,using,update_fields,**kwa
     if created or instance.doNeedRename():
         instance.renameFileAfterCreated()
 
-# @receiver(pre_save, sender=Patient)
-# def renameFileBeforeChange(sender,instance, raw,using,update_fields,**kwargs):
-#     if instance.id is None:
-#         return
-#     else:
-#         instance.renameFileBeforeChange()
+@receiver(post_delete, sender=Patient)
+def deleteFileAfterRecordDel(sender,instance,using,**kwargs):
+    instance.cleanFile()
