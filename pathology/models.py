@@ -22,6 +22,7 @@ class Doctor(models.Model):
 class Patient(models.Model):
   name = models.CharField(max_length=255,verbose_name="病人姓名")
   sex = models.CharField(max_length=255,verbose_name="性别")
+  age = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="年龄")
   iddentificationID = models.CharField(max_length=255,unique=True,verbose_name="病人身份证")
   operateSeqNumber = models.CharField(max_length=255,unique=True,verbose_name="剖验号数")
   deathDate = models.DateField(verbose_name="死亡时日")
@@ -89,17 +90,36 @@ class Patient(models.Model):
 
         
   def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name}--{self.iddentificationID}"
   class Meta:
         verbose_name = '病人'
         verbose_name_plural = '病人集'
 
 class  PathologyPictureItem(models.Model):
-    pathologyPicture = models.FileField(upload_to=settings.images,verbose_name="病理图片")
-    createdAt = models.DateTimeField(auto_now_add=True,verbose_name="图片上传时间")
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE,verbose_name="患者")
-    class Meta:
-        verbose_name = '病理图片'
-        verbose_name_plural = '病理图片集'
-    def __str__(self) -> str:
-        return f"{self.patient.name}第{self.id}张图片"
+      pathologyPicture = models.FileField(upload_to=settings.images,verbose_name="病理图片")
+      createdAt = models.DateTimeField(auto_now_add=True,verbose_name="图片上传时间")
+      patient = models.ForeignKey(Patient, on_delete=models.CASCADE,verbose_name="患者")
+      description = models.TextField(blank=True,null=True,verbose_name="图片描述")
+      def __init__(self, *args, **kwargs):
+            super(PathologyPictureItem, self).__init__(*args, **kwargs)
+            self.__original_pathologyPicture = self.pathologyPicture
+      
+      def cleanFile(self):
+            if self.pathologyPicture:
+                  p = Path(self.pathologyPicture.path)
+                  p.unlink(missing_ok = True)
+      
+      def deleteFileAfterChange(self):
+            if self.pathologyPicture != self.__original_pathologyPicture:
+                  if self.__original_pathologyPicture:
+                        p = Path(self.__original_pathologyPicture.path)
+                        p.unlink(missing_ok = True)
+                  self.__original_pathologyPicture = self.pathologyPicture
+
+
+
+      class Meta:
+            verbose_name = '病理图片'
+            verbose_name_plural = '病理图片集'
+      def __str__(self) -> str:
+            return f"{self.patient.name}的编号为{self.id}的图片"

@@ -30,7 +30,7 @@ class PathologyPictureInline(admin.StackedInline):
 @admin.register(models.Patient)
 class PatientAdmin(admin.ModelAdmin):
     # 'doctors',
-    list_display = ['name','sex','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','creator']
+    list_display = ['name','sex','age','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creator']
     inlines = [PathologyPictureInline]
     ordering = ['operateSeqNumber','operateDate','deathDate','name','iddentificationID']
     search_fields = ['name','iddentificationID__istartswith','operateSeqNumber','operateDiagose','deadReason']
@@ -39,6 +39,13 @@ class PatientAdmin(admin.ModelAdmin):
     list_per_page = 10
     # autocomplete_fields = ['doctors']
     # raw_id_fields = ['doctors']
+    @admin.display(description="诊断报告")
+    def generateDignoseDoc(self,patient):
+        base_url = "/generatedoc"
+        query_string =  urlencode({'patient__id': patient.id})  
+        url = '{}?{}'.format(base_url, query_string)
+        return format_html('<a href="{}"><img src="/media/icons/explorer.svg" width="25" height="20" alt="浏览"></a>',url)
+        # return format_html('<a href="{}">{}</a>',url,"浏览")
 
     @admin.display(description="剖验医生")
     def doctorNames(self,patient):
@@ -104,3 +111,11 @@ class PathologyPictureAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{}</a>',pathologyPictureItem.pathologyPicture.url,os.path.basename(pathologyPictureItem.pathologyPicture.name))
         else:
             return None
+    def has_change_permission(self,request, obj=None):
+        if obj is None:
+            return True
+        return obj.patient.doctors.filter(id = request.user.id).exists()
+    def has_delete_permission(self,request, obj=None):
+        if obj is None:
+            return True
+        return obj.patient.doctors.filter(id = request.user.id).exists()
