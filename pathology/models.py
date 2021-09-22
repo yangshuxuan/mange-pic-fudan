@@ -39,55 +39,39 @@ class Patient(models.Model):
   sliceNum = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="切片数")
   creator = models.ForeignKey(User,verbose_name="记录创建者",on_delete=models.PROTECT, related_name='+')
   
+  def __init__(self, *args, **kwargs):
+            super(Patient, self).__init__(*args, **kwargs)
+            self.__original_operateRecord = self.operateRecord
+            self.__original_pptRecord = self.pptRecord
+            self.__original_otherDocument = self.otherDocument
+
   def doNeedRename(self):
-        return self.doNeedRenameGeneral("operateRecord") or self.doNeedRenameGeneral("pptRecord")
-  def doNeedRenameGeneral(self,fieldName):
-        p = getattr(self,fieldName,None)
-        if p:
-            initial_name = PurePath(p.name)
-            if initial_name.parent.name != str(self.id):
-                  return True
-        else:
-            return False
-      
+        return self.__original_operateRecord.name != self.operateRecord.name  or self.__original_pptRecord.name != self.pptRecord.name or self.__original_otherDocument.name != self.otherDocument.name
+
   def renameFileAfterCreated(self):
       """
       前面已经判断了肯定需要重命名，因此需要save操作
       """
-      self.renameFileAfterCreatedGeneral("operateRecord")
-      self.renameFileAfterCreatedGeneral("pptRecord")
+      self.renameFileAfterCreatedGeneral(self.operateRecord,self.__original_operateRecord)
+      self.renameFileAfterCreatedGeneral(self.pptRecord,self.__original_pptRecord)
+      self.renameFileAfterCreatedGeneral(self.otherDocument,self.__original_otherDocument)
       self.save()
-  def cleanFile(self):
-      if self.operateRecord:
-            p = Path(self.operateRecord.path)
-            p.readlink().unlink(missing_ok = True)
-            p.unlink(missing_ok = True)
-            p.parent.rmdir()
-      if self.pptRecord:
-            p = Path(self.pptRecord.path)
-            p.readlink().unlink(missing_ok = True)
-            p.unlink(missing_ok = True)
-            p.parent.rmdir()
 
 
+  def renameFileAfterCreatedGeneral(self,p,q):
+      
+      if p.name != q.name:
+            if p:
+                  initial_path = p.path
+                  initial_name = PurePath(p.name)
+                  if initial_name.parent.name != str(self.id):
+                        newName = initial_name.parent / str(self.id) / initial_name.name
+                        p.name = str(newName)
+                        new_path = settings.MEDIA_ROOT / newName
+                        new_path.parent.mkdir(parents=True, exist_ok=True)
+                        new_path.symlink_to(initial_path)
+            q.name = p.name
 
-  def cleanFileWhenChange(self,new_path_parent):
-      for child in new_path_parent.iterdir(): 
-            child.readlink().unlink(missing_ok = True)
-            child.unlink(missing_ok = True)
-
-  def renameFileAfterCreatedGeneral(self,fieldName):
-        p = getattr(self,fieldName,None)
-        if p:
-            initial_path = p.path
-            initial_name = PurePath(p.name)
-            if initial_name.parent.name != str(self.id):
-                  newName = initial_name.parent / str(self.id) / initial_name.name
-                  p.name = str(newName)
-                  new_path = settings.MEDIA_ROOT / newName
-                  new_path.parent.mkdir(parents=True, exist_ok=True)
-                  self.cleanFileWhenChange(new_path.parent)
-                  new_path.symlink_to(initial_path)
 
 
 
@@ -105,19 +89,7 @@ class  PathologyPictureItem(models.Model):
       description = models.TextField(blank=True,null=True,verbose_name="图片描述")
       def __init__(self, *args, **kwargs):
             super(PathologyPictureItem, self).__init__(*args, **kwargs)
-            self.__original_pathologyPicture = self.pathologyPicture
-      
-      def cleanFile(self):
-            if self.pathologyPicture:
-                  p = Path(self.pathologyPicture.path)
-                  p.unlink(missing_ok = True)
-      
-      def deleteFileAfterChange(self):
-            if self.pathologyPicture != self.__original_pathologyPicture:
-                  if self.__original_pathologyPicture:
-                        p = Path(self.__original_pathologyPicture.path)
-                        p.unlink(missing_ok = True)
-                  self.__original_pathologyPicture = self.pathologyPicture
+
 
 
 

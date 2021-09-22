@@ -24,6 +24,7 @@ admin.site.site_title = "病理信息管理"
 urlpatterns =[
     url(r'^%s(?P<path>.*)$' % settings.PPT_URL[1:], views.protected_serve_patient, {'document_root': settings.PPT_ROOT}),
     url(r'^%s(?P<path>.*)$' % settings.RECORDS_URL[1:], views.protected_serve_patient, {'document_root': settings.RECORDS_ROOT}),
+    url(r'^%s(?P<path>.*)$' % settings.OTHERDOCS_URL[1:], views.protected_serve_patient, {'document_root': settings.OTHERDOCS_ROOT}),
     url(r'^%s(?P<path>.*)$' % settings.IMAGES_URL[1:], views.protected_serve, {'document_root': settings.IMAGES_ROOT}),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + [
     path('generatedoc', views.generateDocument),
