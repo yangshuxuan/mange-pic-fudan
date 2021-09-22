@@ -137,11 +137,14 @@ MEDIA_URL = '/media/'
 ppt= 'ppt'
 records = 'records'
 images = 'images'
+otherdocs = "otherdocs"
 
 PPT_ROOT = MEDIA_ROOT / ppt
 RECORDS_ROOT = MEDIA_ROOT / records
 IMAGES_ROOT = MEDIA_ROOT / images
+OTHERDOCS_ROOT = MEDIA_ROOT / otherdocs
 
 PPT_URL =  f"{MEDIA_URL}{ppt}/"
 RECORDS_URL =  f"{MEDIA_URL}{records}/"
 IMAGES_URL = f"{MEDIA_URL}{images}/"
+OTHERDOCS_URL = f"{MEDIA_URL}{otherdocs}/"

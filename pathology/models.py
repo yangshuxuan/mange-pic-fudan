@@ -31,9 +31,12 @@ class Patient(models.Model):
   operateDiagose = models.TextField(verbose_name="解剖诊断")
   deadReason = models.TextField(verbose_name="死亡原因")
   operateRecord = models.FileField(upload_to=settings.records,null=True,verbose_name="解剖记录")
-  pptRecord = models.FileField(upload_to=settings.ppt,null=True,verbose_name="纠纷PPT")
+  pptRecord = models.FileField(upload_to=settings.ppt,null=True,verbose_name="PPT")
+  otherDocument = models.FileField(upload_to=settings.otherdocs,null=True,verbose_name="其他文档")
   createdAt = models.DateTimeField(auto_now_add=True,verbose_name="患者建档时间")
   lastModifiedAt = models.DateTimeField(auto_now=True,verbose_name="最后修改时间")
+  otherDoctors = models.CharField(blank=True,null=True,max_length=255,verbose_name="其他剖验医生")
+  sliceNum = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="切片数")
   creator = models.ForeignKey(User,verbose_name="记录创建者",on_delete=models.PROTECT, related_name='+')
   
   def doNeedRename(self):
