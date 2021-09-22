@@ -35,6 +35,28 @@ class DeadReasonFilter(InputFilter):
             return queryset.filter(
                 Q(deadReason__icontains=deadReason)
             )
+class OperateDiagoseFilter(InputFilter):
+    parameter_name = 'operateDiagose'
+    title = '解剖诊断'
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            operateDiagose = self.value()
+
+            return queryset.filter(
+                Q(operateDiagose__icontains=operateDiagose)
+            )
+class OperateSeqNumberFilter(InputFilter):
+    parameter_name = 'operateSeqNumber'
+    title = '剖验号数'
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            operateSeqNumber = self.value()
+
+            return queryset.filter(
+                Q(operateSeqNumber__icontains=operateSeqNumber)
+            )
 # Define an inline admin descriptor for Employee model
 # which acts a bit like a singleton
 class DoctorInline(admin.StackedInline):
@@ -99,7 +121,8 @@ class PatientAdmin(admin.ModelAdmin):
         'doctors',
     )
     list_filter = (
-        'deathDate',
+        OperateSeqNumberFilter,
+        OperateDiagoseFilter,
         DeadReasonFilter,
     )
     list_display = ['name','sex','age','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creator']
