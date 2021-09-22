@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'operatepathology',
         # 'NAME': 'storefront',
-        'HOST':'localhost',
+        'HOST':'139.198.180.97',
         'USER':'root',
         'PASSWORD':'pcl123456'
     }

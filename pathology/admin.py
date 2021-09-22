@@ -4,9 +4,37 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html,urlencode
 from django.urls import reverse
+from django.db.models import Q
+from mangepicfudan.settings import STATIC_URL
 import os
 from . import models
+class InputFilter(admin.SimpleListFilter):
+    template = 'admin/input_filter.xml'
 
+    def lookups(self, request, model_admin):
+        # Dummy, required to show the filter.
+        return ((),)
+
+    def choices(self, changelist):
+        # Grab only the "all" option.
+        all_choice = next(super().choices(changelist))
+        all_choice['query_parts'] = (
+            (k, v)
+            for k, v in changelist.get_filters_params().items()
+            if k != self.parameter_name
+        )
+        yield all_choice
+class DeadReasonFilter(InputFilter):
+    parameter_name = 'deadReason'
+    title = '死亡原因'
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            deadReason = self.value()
+
+            return queryset.filter(
+                Q(deadReason__icontains=deadReason)
+            )
 # Define an inline admin descriptor for Employee model
 # which acts a bit like a singleton
 class DoctorInline(admin.StackedInline):
@@ -30,6 +58,13 @@ class PathologyPictureInline(admin.StackedInline):
 @admin.register(models.Patient)
 class PatientAdmin(admin.ModelAdmin):
     # 'doctors',
+    filter_horizontal = (
+        'doctors',
+    )
+    list_filter = (
+        'deathDate',
+        DeadReasonFilter,
+    )
     list_display = ['name','sex','age','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creator']
     inlines = [PathologyPictureInline]
     ordering = ['operateSeqNumber','operateDate','deathDate','name','iddentificationID']
@@ -44,7 +79,7 @@ class PatientAdmin(admin.ModelAdmin):
         base_url = "/generatedoc"
         query_string =  urlencode({'patient__id': patient.id})  
         url = '{}?{}'.format(base_url, query_string)
-        return format_html('<a href="{}"><img src="/media/icons/explorer.svg" width="25" height="20" alt="浏览"></a>',url)
+        return format_html('<a href="{}"><img src="{}pathology/explorer.svg" width="25" height="20" alt="浏览"></a>',url,STATIC_URL)
         # return format_html('<a href="{}">{}</a>',url,"浏览")
 
     @admin.display(description="剖验医生")
@@ -76,7 +111,7 @@ class PatientAdmin(admin.ModelAdmin):
             url = (reverse('admin:pathology_pathologypictureitem_changelist') 
             + "?" 
             + urlencode({'patient__id':str(patient.id)}))
-            return format_html('<a href="{}"><img src="/media/icons/finger.svg" width="25" height="20" alt="浏览"></a>',url)
+            return format_html('<a href="{}"><img src="{}pathology/finger.svg" width="25" height="20" alt="浏览"></a>',url,STATIC_URL)
     
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "doctors":
