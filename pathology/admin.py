@@ -79,25 +79,7 @@ class PathologyPictureInline(admin.StackedInline):
     extra = 0
 @admin.register(models.Patient)
 class PatientAdmin(admin.ModelAdmin):
-    # 'doctors',
-#       name = models.CharField(max_length=255,verbose_name="病人姓名")
-#   sex = models.CharField(max_length=255,verbose_name="性别")
-#   age = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="年龄")
-#   iddentificationID = models.CharField(max_length=255,unique=True,verbose_name="病人身份证")
-#   operateSeqNumber = models.CharField(max_length=255,unique=True,verbose_name="剖验号数")
-#   deathDate = models.DateField(verbose_name="死亡时日")
-#   operateDate = models.DateField(verbose_name="解剖时日")
-#   doctors = models.ManyToManyField(User,verbose_name="剖验医生", related_name='+')
-#   operateDiagose = models.TextField(verbose_name="解剖诊断")
-#   deadReason = models.TextField(verbose_name="死亡原因")
-#   operateRecord = models.FileField(upload_to=settings.records,null=True,verbose_name="解剖记录")
-#   pptRecord = models.FileField(upload_to=settings.ppt,null=True,verbose_name="PPT")
-#   otherDocument = models.FileField(upload_to=settings.otherdocs,null=True,verbose_name="其他文档")
-#   createdAt = models.DateTimeField(auto_now_add=True,verbose_name="患者建档时间")
-#   lastModifiedAt = models.DateTimeField(auto_now=True,verbose_name="最后修改时间")
-#   otherDoctors = models.CharField(max_length=255,verbose_name="其他医生")
-#   sliceNum = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="切片数")
-#   creator = models.ForeignKey(User,verbose_name="记录创建者",on_delete=models.PROTECT, related_name='+')
+
     fieldsets = (
         ('患者基本信息', {
             'fields': (('name', 'sex', 'age'), 'iddentificationID','deathDate',),
