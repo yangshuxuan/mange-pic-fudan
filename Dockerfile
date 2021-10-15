@@ -1,21 +1,22 @@
-FROM continuumio/miniconda3
-RUN apt-get update
-RUN apt-get -y upgrade
-RUN apt install -y libmariadbd-dev
-RUN apt install -y gcc
-WORKDIR /app
+FROM continuumio/miniconda3:4.10.3-alpine
+RUN apk add --no-cache mysql-client
+# RUN apk add --no-cache cron
 
-# Create the environment:
+# RUN apk add --no-cache bash
+WORKDIR /app
 COPY environment.yml .
 
 SHELL ["/bin/bash", "--login", "-c"]
-# RUN ["conda","env", "create", "-f", "environment.yml"]
 RUN conda env create -f environment.yml
-
-# Make RUN commands use the new environment:
+# ADD ["https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh", "."]
+# ENTRYPOINT ["mysql"]
 RUN echo "conda activate django" >> ~/.bashrc
 COPY . .
-RUN apt-get -y install netcat
 EXPOSE 9001
+
+# RUN echo "*       *       *       *       *       run-parts /etc/periodic/1min" >> /etc/crontabs/root
+# RUN mkdir /etc/periodic/1min
+COPY crontab_backup_mysql.sh /etc/periodic/hourly/crontab_backup_mysql
+RUN chmod u+x /etc/periodic/hourly/crontab_backup_mysql
 # The code to run when container is started:
 ENTRYPOINT ["./entrypoint.sh"]

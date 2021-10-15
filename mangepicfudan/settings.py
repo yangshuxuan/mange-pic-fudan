@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-g=!rgnbtyt5w4v6tholzx6k0w6pyp#^s4itt*gpdrxa59^9peh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -80,6 +80,7 @@ DATABASES = {
         'NAME': 'operatepathology',
         # 'NAME': 'storefront',
         'HOST':'139.198.180.97',
+        # 'HOST':'db',
         'USER':'root',
         'PASSWORD':'pcl123456'
     }
@@ -121,7 +122,7 @@ USE_TZ = True
 LOCALE_PATHS = (BASE_DIR / "locale",)
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
+STATIC_ROOT = BASE_DIR / 'static/'
 STATIC_URL = '/static/'
 
 # Default primary key field type
@@ -148,3 +149,5 @@ PPT_URL =  f"{MEDIA_URL}{ppt}/"
 RECORDS_URL =  f"{MEDIA_URL}{records}/"
 IMAGES_URL = f"{MEDIA_URL}{images}/"
 OTHERDOCS_URL = f"{MEDIA_URL}{otherdocs}/"
+
+ADMINS=[("admin","admin@163.com")]
