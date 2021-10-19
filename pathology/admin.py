@@ -59,19 +59,19 @@ class OperateSeqNumberFilter(InputFilter):
             )
 # Define an inline admin descriptor for Employee model
 # which acts a bit like a singleton
-class DoctorInline(admin.StackedInline):
-    model = models.Doctor
-    can_delete = False
-    verbose_name_plural = '医生集'
+# class DoctorInline(admin.StackedInline):
+#     model = models.Doctor
+#     can_delete = False
+#     verbose_name_plural = '医生集'
 
 # Define a new User admin
-class UserAdmin(BaseUserAdmin):
-    inlines = (DoctorInline,)
+# class UserAdmin(BaseUserAdmin):
+#     inlines = (DoctorInline,)
     # search_fields = ['iddentificationID','username','first_name','last_name']
 
 # Re-register UserAdmin
-admin.site.unregister(User)
-admin.site.register(User, UserAdmin)
+# admin.site.unregister(User)
+# admin.site.register(User, UserAdmin)
 
 
 class PathologyPictureInline(admin.StackedInline):
@@ -82,7 +82,7 @@ class PatientAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('患者基本信息', {
-            'fields': (('name', 'sex', 'age'), 'iddentificationID','deathDate',),
+            'fields': (('name', 'sex', 'age'), 'bodySource','deathDate',),
             # 'classes': ('extrapretty',),
         }),
         ('解剖基本信息', {
@@ -107,11 +107,14 @@ class PatientAdmin(admin.ModelAdmin):
         OperateDiagoseFilter,
         DeadReasonFilter,
     )
-    list_display = ['name','sex','age','iddentificationID','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creator']
+    list_display = ['name','sex','age','bodySource','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creatorFunc']
     inlines = [PathologyPictureInline]
-    ordering = ['operateSeqNumber','operateDate','deathDate','name','iddentificationID']
-    search_fields = ['name','iddentificationID__istartswith','operateSeqNumber','operateDiagose','deadReason']
-    # readonly_fields =  ['name','iddentificationID','operateSeqNumber','operateDiagose','deadReason']
+    ordering = ['operateSeqNumber','operateDate','deathDate','name',]
+    search_fields = ['name','operateSeqNumber','operateDiagose','deadReason','operateDate','deathDate',
+    'doctors__username',
+    'doctors__first_name',
+    'doctors__last_name','creator__username']
+    
     exclude = ('creator',)
     list_per_page = 10
     # autocomplete_fields = ['doctors']
@@ -124,9 +127,12 @@ class PatientAdmin(admin.ModelAdmin):
         return format_html('<a href="{}"><img src="{}pathology/explorer.svg" width="25" height="20" alt="浏览"></a>',url,STATIC_URL)
         # return format_html('<a href="{}">{}</a>',url,"浏览")
 
+    @admin.display(description="记录创建者")
+    def creatorFunc(self,patient):
+        return self.get_user_label(patient.creator) 
     @admin.display(description="剖验医生")
     def doctorNames(self,patient):
-        return ",".join([ d.username for d in list(patient.doctors.all())])
+        return ",".join([ self.get_user_label(d) for d in list(patient.doctors.all())])
     @admin.display(description="解剖记录")
     def showOperateRecord(self,patient):
         if patient.operateRecord:
@@ -155,10 +161,7 @@ class PatientAdmin(admin.ModelAdmin):
             + urlencode({'patient__id':str(patient.id)}))
             return format_html('<a href="{}"><img src="{}pathology/finger.svg" width="25" height="20" alt="浏览"></a>',url,STATIC_URL)
     
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "doctors":
-            kwargs["queryset"] = User.objects.filter(groups__name='普通医生')
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+    
     
     def save_model(self, request, obj, form, change):
         obj.creator = request.user
@@ -167,18 +170,51 @@ class PatientAdmin(admin.ModelAdmin):
     def has_change_permission(self,request, obj=None):
         if obj is None:
             return True
-        return obj.doctors.filter(id = request.user.id).exists()
+        return obj.doctors.filter(id = request.user.id).exists() or obj.bodySource == obj.DEVOTE
     def has_delete_permission(self,request, obj=None):
         if obj is None:
             return True
         return obj.creator.id == request.user.id
+    always_show_username = True
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(PatientAdmin, self).formfield_for_foreignkey(
+                                                db_field, request, **kwargs)
+        if db_field.related_model == User:
+            field.label_from_instance = self.get_user_label
+        return field
+
+    # def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+    #     field = super(PatientAdmin, self).formfield_for_manytomany(
+    #                                             db_field, request, **kwargs)
+    #     if db_field.related_model == User:
+    #         field.label_from_instance = self.get_user_label
+    #     return field
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "doctors":
+            kwargs["queryset"] = User.objects.filter(groups__name='普通医生')
+        # return super().formfield_for_manytomany(db_field, request, **kwargs)
+        field = super(PatientAdmin, self).formfield_for_manytomany(
+                                                db_field, request, **kwargs)
+        if db_field.name == "doctors":
+            field.label_from_instance = self.get_user_label
+        return field
+
+    def get_user_label(self, user):
+        name = f"{user.last_name}{user.first_name}"
+        # name = user.get_full_name()
+        username = user.username
+        if not self.always_show_username:
+            return name or username
+        return (name and name != username and '%s (%s)' % (name, username)
+                or username)
         
 
 
 @admin.register(models.PathologyPictureItem)
 class PathologyPictureAdmin(admin.ModelAdmin):
     
-    list_display = ['patient','createdAt','showPathologyPicture']
+    list_display = ['patient','createdAt','description','showPathologyPicture']
     autocomplete_fields = ['patient']
     ordering = ['createdAt']
     list_per_page = 10
@@ -191,8 +227,8 @@ class PathologyPictureAdmin(admin.ModelAdmin):
     def has_change_permission(self,request, obj=None):
         if obj is None:
             return True
-        return obj.patient.doctors.filter(id = request.user.id).exists()
+        return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE
     def has_delete_permission(self,request, obj=None):
         if obj is None:
             return True
-        return obj.patient.doctors.filter(id = request.user.id).exists()
+        return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE

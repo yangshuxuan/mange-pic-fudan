@@ -8,22 +8,35 @@ import os
 # Create your models here.
     
 
-class Doctor(models.Model):
-#   name = models.CharField(max_length=255,verbose_name="医生姓名")
-  iddentificationID = models.CharField(max_length=255,unique=True,verbose_name="医生身份证")
-#   created_at = models.DateTimeField(auto_now_add=True,verbose_name="医生建档时间")
-  user = models.OneToOneField(User, on_delete=models.CASCADE)
-  def __str__(self) -> str:
-        return f"{self.user.username}-{self.user.first_name}{self.user.last_name}-{self.iddentificationID}"
-  class Meta:
-        verbose_name = '医生'
-        verbose_name_plural = '医生集'
+# class Doctor(models.Model):
+# #   name = models.CharField(max_length=255,verbose_name="医生姓名")
+# #   iddentificationID = models.CharField(max_length=255,unique=True,verbose_name="医生身份证")
+# #   created_at = models.DateTimeField(auto_now_add=True,verbose_name="医生建档时间")
+#   user = models.OneToOneField(User, on_delete=models.CASCADE)
+#   def __str__(self) -> str:
+#         return f"{self.user.username}-{self.user.first_name}{self.user.last_name}"
+#   class Meta:
+#         verbose_name = '医生'
+#         verbose_name_plural = '医生集'
 
 class Patient(models.Model):
+  DEVOTE = 'DE'
+  DISPUTE = 'DI'
+  BODY_SOURCE_CHOICES = [
+            (DEVOTE, '遗体捐献'),
+            (DISPUTE, '医疗纠纷'),
+
+      ]
+  bodySource = models.CharField(
+            max_length=2,
+            choices=BODY_SOURCE_CHOICES,
+            default=DISPUTE,verbose_name="遗体来源"
+      )
   name = models.CharField(max_length=255,verbose_name="病人姓名")
   sex = models.CharField(max_length=255,verbose_name="性别")
   age = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="年龄")
-  iddentificationID = models.CharField(max_length=255,unique=True,verbose_name="病人身份证")
+  
+  
   operateSeqNumber = models.CharField(max_length=255,unique=True,verbose_name="剖验号数")
   deathDate = models.DateField(verbose_name="死亡时日")
   operateDate = models.DateField(verbose_name="解剖时日")
@@ -77,7 +90,7 @@ class Patient(models.Model):
 
         
   def __str__(self) -> str:
-        return f"{self.name}--{self.iddentificationID}"
+        return f"{self.name}--{self.operateSeqNumber}"
   class Meta:
         verbose_name = '病人'
         verbose_name_plural = '病人集'

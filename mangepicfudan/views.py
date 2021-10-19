@@ -1,4 +1,4 @@
-from mangepicfudan.settings import MEDIA_ROOT
+from mangepicfudan.settings import BASE_DIR
 from django.http import HttpResponseBadRequest,HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -44,41 +44,41 @@ def generateDocument(request):
     if patientId is None:
         return HttpResponseBadRequest("<h3>非本病例剖验医生,无权查看诊断报告</h3>")
     p = get_object_or_404(Patient, pk=patientId)
-    if p.doctors.filter(id = request.user.id).exists():
-        docx_title=f"{p.operateSeqNumber}诊断报告.docx"
-        tpl = DocxTemplate(MEDIA_ROOT / 'template.docx')
+    # if p.doctors.filter(id = request.user.id).exists():
+    docx_title=f"{p.operateSeqNumber}诊断报告.docx"
+    tpl = DocxTemplate(BASE_DIR / 'template.docx')
 
-        context = {
-            'operateDiagose':p.operateDiagose,
-            'deadReason':p.deadReason,
-            'sliceNum': p.sliceNum,
-            'name':p.name,
-            'age':p.age,
-            'sex':p.sex,
-            'operateSeqNumber':p.operateSeqNumber,
-            'deadDate':p.deathDate.strftime('%Y/%m/%d'),
-            'operateDate':p.operateDate.strftime('%Y/%m/%d'),
-            'doctors':f"{' '.join([ d.username for d in list(p.doctors.all())])} {p.otherDoctors}"
-        }
+    context = {
+        'operateDiagose':p.operateDiagose,
+        'deadReason':p.deadReason,
+        'sliceNum': p.sliceNum,
+        'name':p.name,
+        'age':p.age,
+        'sex':p.sex,
+        'operateSeqNumber':p.operateSeqNumber,
+        'deadDate':p.deathDate.strftime('%Y/%m/%d'),
+        'operateDate':p.operateDate.strftime('%Y/%m/%d'),
+        'doctors':f"{' '.join([ d.username for d in list(p.doctors.all())])} {p.otherDoctors}"
+    }
 
-        tpl.render(context)
-        
+    tpl.render(context)
+    
 
 
-        
+    
 
-        # Prepare document for download        
-        # -----------------------------
-        f = BytesIO()
-        tpl.save(f)
-        length = f.tell()
-        f.seek(0)
-        response = HttpResponse(
-            f.getvalue(),
-            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
-        response['Content-Disposition'] = 'attachment; filename=' + docx_title
-        response['Content-Length'] = length
-        return response
-    else:
-        return HttpResponseForbidden("<h3>非本病例剖验医生,无权查看</h3>")
+    # Prepare document for download        
+    # -----------------------------
+    f = BytesIO()
+    tpl.save(f)
+    length = f.tell()
+    f.seek(0)
+    response = HttpResponse(
+        f.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
+    response['Content-Disposition'] = 'attachment; filename=' + docx_title
+    response['Content-Length'] = length
+    return response
+    # else:
+    #     return HttpResponseForbidden("<h3>非本病例剖验医生,无权查看</h3>")

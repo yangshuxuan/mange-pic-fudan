@@ -12,7 +12,7 @@ RUN conda env create -f environment.yml
 # ENTRYPOINT ["mysql"]
 RUN echo "conda activate django" >> ~/.bashrc
 COPY . .
-EXPOSE 9001
+EXPOSE 80
 
 # RUN echo "*       *       *       *       *       run-parts /etc/periodic/1min" >> /etc/crontabs/root
 # RUN mkdir /etc/periodic/1min

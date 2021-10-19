@@ -405,10 +405,10 @@ msgid "View on site"
 msgstr "在站点上查看"
 
 msgid "Filter"
-msgstr "过滤器"
+msgstr "搜索器"
 
 msgid "Clear all filters"
-msgstr "清除所有过滤器"
+msgstr "清除所有搜索条件"
 
 msgid "Remove from sorting"
 msgstr "删除排序"
