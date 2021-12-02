@@ -5,7 +5,9 @@ from django.contrib.auth.models import User
 from django.utils.html import format_html,urlencode
 from django.urls import reverse
 from django.db.models import Q
+from django.db.models.functions import Concat
 from mangepicfudan.settings import STATIC_URL
+from django.utils.safestring import mark_safe
 import os
 from . import models
 class InputFilter(admin.SimpleListFilter):
@@ -57,6 +59,19 @@ class OperateSeqNumberFilter(InputFilter):
             return queryset.filter(
                 Q(operateSeqNumber__icontains=operateSeqNumber)
             )
+class DoctorFullnameFilter(InputFilter):
+    parameter_name = 'doctorFullname'
+    title = '剖验医生'
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            doctorFullname = self.value()
+            u = User.objects.annotate(full_name=Concat('last_name','first_name')).filter(Q(full_name=doctorFullname)).values('id')
+
+            return queryset.filter(
+                Q(doctors__id__in=u)
+            )
+
 # Define an inline admin descriptor for Employee model
 # which acts a bit like a singleton
 # class DoctorInline(admin.StackedInline):
@@ -86,7 +101,7 @@ class PatientAdmin(admin.ModelAdmin):
             # 'classes': ('extrapretty',),
         }),
         ('解剖基本信息', {
-            'fields': (('operateSeqNumber', 'operateDate','sliceNum'), 'doctors','otherDoctors',),
+            'fields': (('operateSeqNumber', 'operateDate','sliceNum','photoNum','pptNum','remark'), 'doctors','otherDoctors',),
             # 'classes': ('extrapretty',),
         }),
         ('解剖结果', {
@@ -106,8 +121,9 @@ class PatientAdmin(admin.ModelAdmin):
         OperateSeqNumberFilter,
         OperateDiagoseFilter,
         DeadReasonFilter,
+        DoctorFullnameFilter
     )
-    list_display = ['name','sex','age','bodySource','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','enterPictureList','generateDignoseDoc','creatorFunc']
+    list_display = ['name','sex','age','bodySource','operateSeqNumber','deathDate','operateDate','doctorNames','showOperateRecord','showPptRecord','showOtherDocument','enterPictureList','generateDignoseDoc','creatorFunc']
     inlines = [PathologyPictureInline]
     ordering = ['operateSeqNumber','operateDate','deathDate','name',]
     search_fields = ['name','operateSeqNumber','operateDiagose','deadReason','operateDate','deathDate',
@@ -152,7 +168,15 @@ class PatientAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{}</a>',url,os.path.basename(patient.pptRecord.name))
         else:
             return None
-    
+    @admin.display(description="其他文档")
+    def showOtherDocument(self,patient):
+        if patient.otherDocument:
+            url = (patient.otherDocument.url 
+            + "?" 
+            + urlencode({'patient__id':str(patient.id)}))
+            return format_html('<a href="{}">{}</a>',url,os.path.basename(patient.otherDocument.name))
+        else:
+            return None
     @admin.display(description="病理图片列表")
     def enterPictureList(self,patient):
         if patient.pathologypictureitem_set.first():
@@ -213,22 +237,50 @@ class PatientAdmin(admin.ModelAdmin):
 
 @admin.register(models.PathologyPictureItem)
 class PathologyPictureAdmin(admin.ModelAdmin):
-    
-    list_display = ['patient','createdAt','description','showPathologyPicture']
+    readonly_fields = ["headshot_big_image"]
+    list_display = ['patient','createdAt','description','showBigPathologyPicture','showPathologyPicture','headshot_small_image']
     autocomplete_fields = ['patient']
     ordering = ['createdAt']
     list_per_page = 10
-    @admin.display(description="病理图片")
+    @admin.display(description="病理图片链接")
     def showPathologyPicture(self,pathologyPictureItem):
         if pathologyPictureItem.pathologyPicture:
             return format_html('<a href="{}">{}</a>',pathologyPictureItem.pathologyPicture.url,os.path.basename(pathologyPictureItem.pathologyPicture.name))
         else:
             return None
-    def has_change_permission(self,request, obj=None):
-        if obj is None:
-            return True
-        return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE
-    def has_delete_permission(self,request, obj=None):
-        if obj is None:
-            return True
-        return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE
+    @admin.display(description="大病理图片链接")
+    def showBigPathologyPicture(self,pathologyPictureItem):
+        if pathologyPictureItem.bigPathologyPicture:
+            return format_html('<a href="{}">{}</a>',pathologyPictureItem.bigPathologyPicture.url,os.path.basename(pathologyPictureItem.bigPathologyPicture.name))
+        else:
+            return None
+    # def has_change_permission(self,request, obj=None):
+    #     if obj is None:
+    #         return True
+    #     return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE
+    # def has_delete_permission(self,request, obj=None):
+    #     if obj is None:
+    #         return True
+    #     return obj.patient.doctors.filter(id = request.user.id).exists() or obj.patient.bodySource == obj.patient.DEVOTE
+    
+    @admin.display(description="病理图片")
+    def headshot_small_image(self, obj):
+        width = 200
+        if obj and obj.pathologyPicture  and obj.pathologyPicture.size <= 10 *1024 * 1024  :
+            return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = obj.pathologyPicture.url,
+                width=width,
+                height=1.0 * obj.pathologyPicture.height/obj.pathologyPicture.width * width,
+            )
+    )
+    @admin.display(description="病理图片")
+    def headshot_big_image(self, obj):
+        width = 400
+        if obj and obj.pathologyPicture  and obj.pathologyPicture.size <= 10 *1024 * 1024:
+            return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
+                url = obj.pathologyPicture.url,
+                width=width,
+                height=1.0 * obj.pathologyPicture.height/obj.pathologyPicture.width * width,
+            )
+    )
+    

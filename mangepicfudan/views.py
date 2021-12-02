@@ -15,6 +15,7 @@ from docx.oxml.ns import qn
 from  django.http import HttpResponse
 import re
 from docxtpl import DocxTemplate
+from django.utils.encoding import escape_uri_path
 
 
 @login_required(login_url='/login/')
@@ -52,14 +53,18 @@ def generateDocument(request):
         'operateDiagose':p.operateDiagose,
         'deadReason':p.deadReason,
         'sliceNum': p.sliceNum,
+        'photoNum': p.photoNum,
+        'pptNum': p.pptNum,
+        'remark': p.remark,
         'name':p.name,
         'age':p.age,
         'sex':p.sex,
         'operateSeqNumber':p.operateSeqNumber,
         'deadDate':p.deathDate.strftime('%Y/%m/%d'),
         'operateDate':p.operateDate.strftime('%Y/%m/%d'),
-        'doctors':f"{' '.join([ d.username for d in list(p.doctors.all())])} {p.otherDoctors}"
+        'doctors':f"{' '.join([ d.last_name+d.first_name for d in list(p.doctors.all())])} {p.otherDoctors if p.otherDoctors else '' }"
     }
+    context = dict((k,context[k] if context[k] else "") for k in context)
 
     tpl.render(context)
     
@@ -77,7 +82,7 @@ def generateDocument(request):
         f.getvalue(),
         content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
-    response['Content-Disposition'] = 'attachment; filename=' + docx_title
+    response['Content-Disposition'] = f'attachment; filename={escape_uri_path(docx_title)}'
     response['Content-Length'] = length
     return response
     # else:

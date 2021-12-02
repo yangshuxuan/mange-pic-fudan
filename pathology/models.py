@@ -34,7 +34,8 @@ class Patient(models.Model):
       )
   name = models.CharField(max_length=255,verbose_name="病人姓名")
   sex = models.CharField(max_length=255,verbose_name="性别")
-  age = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="年龄")
+#   age = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="年龄")
+  age = models.CharField(max_length=255,blank=True,null=True,verbose_name="年龄")
   
   
   operateSeqNumber = models.CharField(max_length=255,unique=True,verbose_name="剖验号数")
@@ -49,7 +50,10 @@ class Patient(models.Model):
   createdAt = models.DateTimeField(auto_now_add=True,verbose_name="患者建档时间")
   lastModifiedAt = models.DateTimeField(auto_now=True,verbose_name="最后修改时间")
   otherDoctors = models.CharField(blank=True,null=True,max_length=255,verbose_name="其他剖验医生")
-  sliceNum = models.PositiveSmallIntegerField(blank=True,null=True,verbose_name="切片数")
+  sliceNum = models.CharField(max_length=255,blank=True,null=True,verbose_name="切片数")
+  photoNum = models.CharField(max_length=255,blank=True,null=True,verbose_name="照片数")
+  pptNum = models.CharField(max_length=255,blank=True,null=True,verbose_name="幻灯片数")
+  remark = models.CharField(max_length=255,blank=True,null=True,verbose_name="备注")
   creator = models.ForeignKey(User,verbose_name="记录创建者",on_delete=models.PROTECT, related_name='+')
   
   def __init__(self, *args, **kwargs):
@@ -96,7 +100,8 @@ class Patient(models.Model):
         verbose_name_plural = '病人集'
 
 class  PathologyPictureItem(models.Model):
-      pathologyPicture = models.FileField(upload_to=settings.images,verbose_name="病理图片")
+      pathologyPicture = models.ImageField(blank=True,null=True,upload_to=settings.images,verbose_name="病理图片",help_text="size < 1G的图片")
+      bigPathologyPicture = models.FileField(blank=True,null=True,upload_to=settings.images,verbose_name="大病理图片",help_text="size >= 1G的图片或无法正常显示的图片")
       createdAt = models.DateTimeField(auto_now_add=True,verbose_name="图片上传时间")
       patient = models.ForeignKey(Patient, on_delete=models.CASCADE,verbose_name="患者")
       description = models.TextField(blank=True,null=True,verbose_name="图片描述")
