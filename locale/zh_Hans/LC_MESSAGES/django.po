@@ -386,7 +386,7 @@ msgid "Welcome,"
 msgstr "欢迎，"
 
 msgid "View site"
-msgstr "查看站点"
+msgstr "帮助"
 
 msgid "Documentation"
 msgstr "文档"

@@ -10,6 +10,8 @@ from mangepicfudan.settings import STATIC_URL
 from django.utils.safestring import mark_safe
 import os
 from . import models
+
+admin.site.site_url = "/media/help.pdf"
 class InputFilter(admin.SimpleListFilter):
     template = 'admin/input_filter.xml'
 
