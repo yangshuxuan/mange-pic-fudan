@@ -196,11 +196,12 @@ class PatientAdmin(admin.ModelAdmin):
     def has_change_permission(self,request, obj=None):
         if obj is None:
             return True
-        return obj.doctors.filter(id = request.user.id).exists() or obj.bodySource == obj.DEVOTE
+        #return obj.doctors.filter(id = request.user.id).exists() or obj.bodySource == obj.DEVOTE or obj.creator.id == request.user.id
+        return obj.doctors.filter(id = request.user.id).exists() or  obj.creator.id == request.user.id  or User.objects.get(pk=request.user.id).is_superuser
     def has_delete_permission(self,request, obj=None):
         if obj is None:
             return True
-        return obj.creator.id == request.user.id
+        return obj.doctors.filter(id = request.user.id).exists() or  obj.creator.id == request.user.id or User.objects.get(pk=request.user.id).is_superuser
     always_show_username = True
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
@@ -269,6 +270,8 @@ class PathologyPictureAdmin(admin.ModelAdmin):
     def headshot_small_image(self, obj):
         width = 200
         if obj and obj.pathologyPicture  and obj.pathologyPicture.size <= 10 *1024 * 1024  :
+            if not obj.pathologyPicture.height:
+                return format_html('<a href="{}">{}</a>',obj.pathologyPicture.url,os.path.basename(obj.pathologyPicture.name))
             return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
                 url = obj.pathologyPicture.url,
                 width=width,
@@ -279,6 +282,8 @@ class PathologyPictureAdmin(admin.ModelAdmin):
     def headshot_big_image(self, obj):
         width = 400
         if obj and obj.pathologyPicture  and obj.pathologyPicture.size <= 10 *1024 * 1024:
+            if not obj.pathologyPicture.height:
+                return format_html('<a href="{}">{}</a>',obj.pathologyPicture.url,os.path.basename(obj.pathologyPicture.name))
             return mark_safe('<img src="{url}" width="{width}" height={height} />'.format(
                 url = obj.pathologyPicture.url,
                 width=width,
